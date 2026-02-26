@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Asset {
+  id          String         @id @default(cuid())
+  symbol      String         @unique
+  name        String
+  logoUrl     String?
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  trades      Trade[]
+  prices      PriceSnapshot[]
+}
+
+model Trade {
+  id        String      @id @default(cuid())
+  assetId   String
+  asset     Asset       @relation(fields: [assetId], references: [id])
+  side      TradeSide
+  price     Decimal     @db.Decimal(20, 8)
+  quantity  Decimal     @db.Decimal(20, 8)
+  total     Decimal     @db.Decimal(20, 8)
+  exchange  String
+  tradedAt  DateTime    @default(now())
+  createdAt DateTime    @default(now())
+
+  @@index([assetId, tradedAt])
+  @@index([tradedAt])
+}
+
+model PriceSnapshot {
+  id        String   @id @default(cuid())
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id])
+  open      Decimal  @db.Decimal(20, 8)
+  high      Decimal  @db.Decimal(20, 8)
+  low       Decimal  @db.Decimal(20, 8)
+  close     Decimal  @db.Decimal(20, 8)
+  volume    Decimal  @db.Decimal(30, 8)
+  interval  String   // e.g. "1m", "5m", "1h", "1d"
+  timestamp DateTime
+
+  @@unique([assetId, interval, timestamp])
+  @@index([assetId, timestamp])
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Alert {
+  id          String      @id @default(cuid())
+  assetSymbol String
+  condition   AlertCondition
+  threshold   Decimal     @db.Decimal(20, 8)
+  message     String?
+  isActive    Boolean     @default(true)
+  triggeredAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([assetSymbol, isActive])
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+enum TradeSide {
+  BUY
+  SELL
+}
+
+enum AlertCondition {
+  PRICE_ABOVE
+  PRICE_BELOW
+  VOLUME_ABOVE
+}
