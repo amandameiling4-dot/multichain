@@ -22,7 +22,7 @@ export default function PriceChart() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [snapshots, setSnapshots] = useState<PriceSnapshot[]>([]);
-  const [interval, setInterval_] = useState("1m");
+  const [interval, setSelectedInterval] = useState("1m");
 
   useEffect(() => {
     fetch("/api/assets")
@@ -67,7 +67,7 @@ export default function PriceChart() {
         {["1m", "5m", "1h", "1d"].map((iv) => (
           <button
             key={iv}
-            onClick={() => setInterval_(iv)}
+            onClick={() => setSelectedInterval(iv)}
             className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
               interval === iv
                 ? "bg-blue-600 text-white"

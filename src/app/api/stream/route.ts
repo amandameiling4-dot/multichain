@@ -19,7 +19,8 @@ export async function GET(request: NextRequest) {
 
   const stream = new ReadableStream({
     async start(controller) {
-      let lastTradeId: string | null = null;
+      // Track the tradedAt timestamp of the most recent trade we've seen
+      let lastSeenAt: Date = new Date(0);
 
       const send = (data: unknown) => {
         const payload = `data: ${JSON.stringify(data)}\n\n`;
@@ -39,19 +40,18 @@ export async function GET(request: NextRequest) {
       });
 
       if (recent.length > 0) {
-        lastTradeId = recent[0].id;
+        // recent[0] is the most recent trade (desc order)
+        lastSeenAt = recent[0].tradedAt;
         send({ type: "snapshot", trades: recent.reverse() });
       }
 
-      // Poll every 2 seconds for new trades
-      const interval = setInterval(async () => {
+      // Poll every 2 seconds for trades newer than the last seen timestamp
+      const intervalId = setInterval(async () => {
         try {
           const newTrades = await prisma.trade.findMany({
             where: {
               ...(assetId && { assetId }),
-              ...(lastTradeId && {
-                tradedAt: { gt: recent[0]?.tradedAt ?? new Date(0) },
-              }),
+              tradedAt: { gt: lastSeenAt },
             },
             orderBy: { tradedAt: "asc" },
             take: 50,
@@ -59,13 +59,14 @@ export async function GET(request: NextRequest) {
           });
 
           if (newTrades.length > 0) {
-            lastTradeId = newTrades[newTrades.length - 1].id;
+            // Advance the cursor to the latest trade seen
+            lastSeenAt = newTrades[newTrades.length - 1].tradedAt;
             for (const trade of newTrades) {
               send({ type: "trade", trade });
             }
           }
         } catch {
-          clearInterval(interval);
+          clearInterval(intervalId);
           try {
             controller.close();
           } catch {
@@ -76,7 +77,7 @@ export async function GET(request: NextRequest) {
 
       // Clean up when the client disconnects
       request.signal.addEventListener("abort", () => {
-        clearInterval(interval);
+        clearInterval(intervalId);
         try {
           controller.close();
         } catch {
