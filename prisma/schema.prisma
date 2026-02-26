@@ -10,15 +10,16 @@ datasource db {
 }
 
 model Asset {
-  id          String         @id @default(cuid())
-  symbol      String         @unique
-  name        String
-  logoUrl     String?
-  isActive    Boolean        @default(true)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  trades      Trade[]
-  prices      PriceSnapshot[]
+  id           String         @id @default(cuid())
+  symbol       String         @unique
+  name         String
+  logoUrl      String?
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  trades       Trade[]
+  prices       PriceSnapshot[]
+  binaryTrades BinaryTrade[]
 }
 
 model Trade {
@@ -94,4 +95,308 @@ enum AlertCondition {
   PRICE_ABOVE
   PRICE_BELOW
   VOLUME_ABOVE
+}
+
+model AppUser {
+  id            String    @id @default(cuid())
+  walletAddress String    @unique
+  userId        String    @unique
+  email         String?
+  displayName   String?
+  mode          UserMode  @default(REAL)
+  vipLevel      Int       @default(0)
+  isRegistered  Boolean   @default(false)
+  isFrozen      Boolean   @default(false)
+  points        Int       @default(0)
+  referralCode  String?   @unique
+  referredBy    String?
+  assignedAdmin String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  notifications  Notification[]
+  kycSubmissions KYCSubmission[]
+  depositProofs  DepositProof[]
+  binaryTrades   BinaryTrade[]
+  stakes         Stake[]
+  demoTrades     DemoTrade[]
+  chatSessions   ChatSession[]
+  activityLogs   ActivityLog[]
+
+  @@index([walletAddress])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      AppUser          @relation(fields: [userId], references: [id])
+  title     String
+  body      String
+  type      NotificationType @default(INFO)
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead])
+}
+
+model KYCSubmission {
+  id          String    @id @default(cuid())
+  userId      String
+  user        AppUser   @relation(fields: [userId], references: [id])
+  fullName    String
+  docType     String
+  docNumber   String
+  frontImage  String
+  backImage   String
+  status      KYCStatus @default(PENDING)
+  reviewNote  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([userId, status])
+}
+
+model DepositProof {
+  id          String        @id @default(cuid())
+  userId      String
+  user        AppUser       @relation(fields: [userId], references: [id])
+  amount      Decimal       @db.Decimal(20, 8)
+  network     String
+  txHash      String
+  screenshot  String?
+  status      UploadStatus  @default(PENDING)
+  adminNote   String?
+  reviewedAt  DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([userId, status])
+}
+
+model BinaryTrade {
+  id          String          @id @default(cuid())
+  userId      String
+  user        AppUser         @relation(fields: [userId], references: [id])
+  assetId     String
+  asset       Asset           @relation(fields: [assetId], references: [id])
+  direction   TradeDirection
+  amount      Decimal         @db.Decimal(20, 8)
+  expiry      Int
+  payoutPct   Decimal         @db.Decimal(5, 2)
+  entryPrice  Decimal?        @db.Decimal(20, 8)
+  exitPrice   Decimal?        @db.Decimal(20, 8)
+  profit      Decimal?        @db.Decimal(20, 8)
+  status      BinaryStatus    @default(ACTIVE)
+  outcome     TradeOutcome?
+  expiresAt   DateTime
+  settledAt   DateTime?
+  createdAt   DateTime        @default(now())
+
+  @@index([userId, status])
+  @@index([expiresAt, status])
+}
+
+model Stake {
+  id          String      @id @default(cuid())
+  userId      String
+  user        AppUser     @relation(fields: [userId], references: [id])
+  assetSymbol String
+  amount      Decimal     @db.Decimal(20, 8)
+  apyRate     Decimal     @db.Decimal(5, 2)
+  earnings    Decimal     @db.Decimal(20, 8) @default(0)
+  status      StakeStatus @default(ACTIVE)
+  startDate   DateTime    @default(now())
+  endDate     DateTime?
+  claimedAt   DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId, status])
+}
+
+model DemoTrade {
+  id          String         @id @default(cuid())
+  userId      String
+  user        AppUser        @relation(fields: [userId], references: [id])
+  assetSymbol String
+  direction   TradeDirection
+  amount      Decimal        @db.Decimal(20, 8)
+  result      TradeOutcome?
+  profit      Decimal?       @db.Decimal(20, 8)
+  createdAt   DateTime       @default(now())
+
+  @@index([userId])
+}
+
+model ChatSession {
+  id          String        @id @default(cuid())
+  userId      String
+  user        AppUser       @relation(fields: [userId], references: [id])
+  status      ChatStatus    @default(OPEN)
+  lastMessage String?
+  lastMsgAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  messages    ChatMessage[]
+
+  @@index([userId, status])
+}
+
+model ChatMessage {
+  id          String      @id @default(cuid())
+  sessionId   String
+  session     ChatSession @relation(fields: [sessionId], references: [id])
+  sender      String
+  content     String
+  readAt      DateTime?
+  createdAt   DateTime    @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+model TradingLevel {
+  id          String           @id @default(cuid())
+  name        String
+  type        TradingLevelType
+  minAmount   Decimal          @db.Decimal(20, 8)
+  maxAmount   Decimal          @db.Decimal(20, 8)
+  payoutPct   Decimal          @db.Decimal(5, 2)
+  description String?
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model BonusProgram {
+  id          String      @id @default(cuid())
+  type        BonusType
+  name        String
+  value       Decimal     @db.Decimal(10, 4)
+  description String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Currency {
+  id        String    @id @default(cuid())
+  symbol    String    @unique
+  name      String
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  networks  Network[]
+}
+
+model Network {
+  id          String   @id @default(cuid())
+  currencyId  String
+  currency    Currency @relation(fields: [currencyId], references: [id])
+  name        String
+  symbol      String
+  chainId     String?
+  fee         Decimal  @db.Decimal(20, 8) @default(0)
+  minDeposit  Decimal  @db.Decimal(20, 8) @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model ExchangeRate {
+  id           String   @id @default(cuid())
+  fromCurrency String
+  toCurrency   String
+  rate         Decimal  @db.Decimal(20, 8)
+  updatedAt    DateTime @updatedAt
+
+  @@unique([fromCurrency, toCurrency])
+}
+
+model DepositWallet {
+  id        String   @id @default(cuid())
+  network   String
+  address   String
+  label     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      AppUser? @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+enum UserMode {
+  REAL
+  DEMO
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+  TRADE
+  DEPOSIT
+  KYC
+}
+
+enum KYCStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum UploadStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TradeDirection {
+  UP
+  DOWN
+}
+
+enum BinaryStatus {
+  ACTIVE
+  SETTLED
+  CANCELLED
+}
+
+enum TradeOutcome {
+  WIN
+  LOSS
+}
+
+enum StakeStatus {
+  ACTIVE
+  COMPLETED
+  WITHDRAWN
+}
+
+enum ChatStatus {
+  OPEN
+  CLOSED
+}
+
+enum TradingLevelType {
+  BINARY
+  ARBITRAGE
+}
+
+enum BonusType {
+  WELCOME
+  REFERRAL
+  CASHBACK
+  STAKING
 }
