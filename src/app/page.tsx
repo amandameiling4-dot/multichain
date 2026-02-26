@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import TradeFeed from "@/components/TradeFeed";
 import PriceChart from "@/components/PriceChart";
 import Link from "next/link";
@@ -20,11 +20,10 @@ const BOTTOM_NAV = [
 
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [wallet, setWallet] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    setWallet(localStorage.getItem("connectedWallet") ?? undefined);
-  }, []);
+  const [wallet] = useState<string | undefined>(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("connectedWallet") ?? undefined;
+    return undefined;
+  });
 
   return (
     <WalletGate>

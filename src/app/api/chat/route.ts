@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   if (!userId) return Response.json({ error: "userId is required" }, { status: 400 });
 
   // Get or find latest open session
-  let session = await prisma.chatSession.findFirst({
+  const session = await prisma.chatSession.findFirst({
     where: { userId, status: "OPEN" },
     include: { messages: { orderBy: { createdAt: "asc" } } },
     orderBy: { createdAt: "desc" },

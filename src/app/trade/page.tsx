@@ -14,13 +14,15 @@ interface Asset {
 
 export default function TradePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [wallet, setWallet] = useState<string | undefined>(undefined);
+  const [wallet] = useState<string | undefined>(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("connectedWallet") ?? undefined;
+    return undefined;
+  });
   const [userId, setUserId] = useState("");
   const [assets, setAssets] = useState<Asset[]>([]);
 
   useEffect(() => {
-    const w = localStorage.getItem("connectedWallet") ?? undefined;
-    setWallet(w);
+    const w = localStorage.getItem("connectedWallet");
     if (w) {
       fetch(`/api/users?walletAddress=${w}`)
         .then((r) => r.json())

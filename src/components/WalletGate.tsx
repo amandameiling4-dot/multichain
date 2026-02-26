@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, ReactNode } from "react";
+import { useState, ReactNode } from "react";
 
 interface WalletGateProps {
   children: ReactNode;
@@ -16,14 +16,10 @@ function generateWalletAddress(): string {
 }
 
 export default function WalletGate({ children }: WalletGateProps) {
-  const [wallet, setWallet] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("connectedWallet");
-    if (stored) setWallet(stored);
-    setLoading(false);
-  }, []);
+  const [wallet, setWallet] = useState<string | null>(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("connectedWallet");
+    return null;
+  });
 
   function connectWallet() {
     const addr = generateWalletAddress();
@@ -35,14 +31,6 @@ export default function WalletGate({ children }: WalletGateProps) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ walletAddress: addr }),
     }).catch(() => {});
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-gray-400 text-sm">Loading...</div>
-      </div>
-    );
   }
 
   if (!wallet) {

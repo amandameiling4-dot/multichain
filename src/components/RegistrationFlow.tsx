@@ -11,7 +11,11 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
-  const [userId] = useState(() => String(Math.floor(10000 + Math.random() * 90000)));
+  const [userId] = useState(() => {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return String(10000 + (arr[0] % 90000));
+  });
 
   function handleEmailSubmit() {
     if (!email || !email.includes("@")) {
@@ -23,8 +27,9 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
   }
 
   function handleCodeVerify() {
+    // Demo-only: hardcoded verification code for simulation purposes
     if (code !== "123456") {
-      setError("Invalid verification code. Use: 123456");
+      setError("Invalid verification code. Use: 123456 (demo)");
       return;
     }
     setError("");

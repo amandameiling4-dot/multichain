@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { randomInt } from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +24,8 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "walletAddress is required" }, { status: 400 });
   }
 
-  const userId = String(Math.floor(10000 + Math.random() * 90000));
-  const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+  const userId = String(randomInt(10000, 99999));
+  const referralCode = crypto.randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase();
 
   const existing = await prisma.appUser.findUnique({ where: { walletAddress } });
   if (existing) return Response.json(existing);
