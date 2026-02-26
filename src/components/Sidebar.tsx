@@ -16,7 +16,11 @@ const navLinks = [
   { href: "/p2p", label: "P2P", icon: "🔄" },
   { href: "/borrow", label: "Borrow", icon: "💳" },
   { href: "/wallet", label: "Wallet", icon: "👛" },
+  { href: "/withdraw", label: "Withdraw", icon: "📤" },
+  { href: "/history", label: "History", icon: "📋" },
+  { href: "/kyc", label: "KYC", icon: "🪪" },
   { href: "/notifications", label: "Notifications", icon: "🔔" },
+  { href: "/settings", label: "Settings", icon: "⚙️" },
   { href: "/support", label: "Support", icon: "💬" },
 ];
 

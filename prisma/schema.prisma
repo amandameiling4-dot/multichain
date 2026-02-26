@@ -103,6 +103,7 @@ model AppUser {
   userId        String    @unique
   email         String?
   displayName   String?
+  role          UserRole  @default(USER)
   mode          UserMode  @default(REAL)
   vipLevel      Int       @default(0)
   isRegistered  Boolean   @default(false)
@@ -117,11 +118,13 @@ model AppUser {
   notifications  Notification[]
   kycSubmissions KYCSubmission[]
   depositProofs  DepositProof[]
+  withdrawals    Withdrawal[]
   binaryTrades   BinaryTrade[]
   stakes         Stake[]
   demoTrades     DemoTrade[]
   chatSessions   ChatSession[]
   activityLogs   ActivityLog[]
+  auditLogs      AuditLog[]
 
   @@index([walletAddress])
 }
@@ -335,6 +338,51 @@ model ActivityLog {
   @@index([userId, createdAt])
 }
 
+model Withdrawal {
+  id          String           @id @default(cuid())
+  userId      String
+  user        AppUser          @relation(fields: [userId], references: [id])
+  amount      Decimal          @db.Decimal(20, 8)
+  currency    String           @default("USDT")
+  destination String
+  method      WithdrawalMethod @default(CRYPTO)
+  fee         Decimal          @db.Decimal(20, 8) @default(0)
+  status      WithdrawStatus   @default(PENDING)
+  adminNote   String?
+  txRef       String?
+  reviewedAt  DateTime?
+  paidAt      DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([userId, status])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  adminId    String?
+  userId     String?
+  user       AppUser? @relation(fields: [userId], references: [id])
+  action     String
+  entityType String?
+  entityId   String?
+  before     String?
+  after      String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model AuthNonce {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique
+  nonce         String
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+}
+
 enum UserMode {
   REAL
   DEMO
@@ -399,4 +447,23 @@ enum BonusType {
   REFERRAL
   CASHBACK
   STAKING
+}
+
+enum UserRole {
+  USER
+  SUPPORT
+  OPS_ADMIN
+  SUPER_ADMIN
+}
+
+enum WithdrawStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum WithdrawalMethod {
+  CRYPTO
+  BANK
 }

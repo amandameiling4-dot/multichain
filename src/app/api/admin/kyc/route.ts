@@ -39,5 +39,31 @@ export async function PUT(request: NextRequest) {
     where: { id },
     data: { status: status as "APPROVED" | "REJECTED", reviewNote, reviewedAt: new Date() },
   });
+
+  // Notify user
+  await prisma.notification.create({
+    data: {
+      userId: submission.userId,
+      title: status === "APPROVED" ? "KYC Approved" : "KYC Rejected",
+      body:
+        status === "APPROVED"
+          ? "Your identity verification has been approved."
+          : `Your KYC was rejected. ${reviewNote ?? ""}`.trim(),
+      type: "KYC",
+    },
+  }).catch(() => {});
+
+  // Audit log
+  await prisma.auditLog.create({
+    data: {
+      adminId: "admin-api",
+      userId: submission.userId,
+      action: `KYC_${status}`,
+      entityType: "KYCSubmission",
+      entityId: id,
+      after: JSON.stringify({ status, reviewNote }),
+    },
+  }).catch(() => {});
+
   return Response.json(submission);
 }

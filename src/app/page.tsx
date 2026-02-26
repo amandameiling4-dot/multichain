@@ -64,8 +64,11 @@ export default function Home() {
                 { href: "/p2p", label: "P2P" },
                 { href: "/borrow", label: "Borrow" },
                 { href: "/wallet", label: "Wallet" },
+                { href: "/withdraw", label: "Withdraw" },
+                { href: "/history", label: "History" },
                 { href: "/kyc", label: "KYC" },
                 { href: "/notifications", label: "Notifications" },
+                { href: "/settings", label: "Settings" },
                 { href: "/support", label: "Support" },
                 { href: "/admin", label: "Admin" },
               ].map((link) => (
