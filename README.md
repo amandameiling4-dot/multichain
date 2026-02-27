@@ -27,7 +27,58 @@ A real-time multi-chain trading data dashboard with admin control panel.
 - 🗄️ **Neon Postgres** — serverless Postgres with connection pooling  
 - 🔄 **Prisma ORM** — type-safe queries, migrations, and seed data  
 
-## Getting started
+## Deploying to Vercel (primary path)
+
+The recommended way to run MultiChain is to deploy it publicly on [Vercel](https://vercel.com/new) with a [Neon](https://neon.tech) Postgres database.
+
+### 1. Create a Neon database
+
+Create a free project at <https://neon.tech>. From the *Connection Details* panel, copy both:
+- **Pooled** connection string (includes `?pgbouncer=true`) — used at runtime
+- **Direct** (unpooled) connection string — used for migrations only
+
+### 2. Import the repository into Vercel
+
+Import this repository in [Vercel](https://vercel.com/new). Before the first deploy, set **all** of the following environment variables in **Vercel → Project → Settings → Environment Variables**:
+
+| Variable                | Description |
+|-------------------------|-------------|
+| `DATABASE_URL`          | Pooled Neon connection URL (runtime, via PgBouncer) |
+| `DATABASE_URL_UNPOOLED` | Direct Neon connection URL (migrations only — must bypass PgBouncer) |
+| `ADMIN_API_KEY`         | Secret for admin API endpoints — generate with `openssl rand -base64 32` |
+| `SESSION_SECRET`        | Secret for signing session cookies — generate with `openssl rand -base64 32` |
+| `NEXT_PUBLIC_APP_URL`   | Your Vercel deployment URL (e.g. `https://your-project.vercel.app`) |
+
+> ⚠️ **`SESSION_SECRET` is required in production.** The app will throw on startup if it is missing.
+
+### 3. Apply database migrations (pre/post-deploy step)
+
+Migrations must run against the **direct** connection (`DATABASE_URL_UNPOOLED`) to bypass PgBouncer, which does not support DDL transactions. Run this locally before or after each deploy (with your `.env.local` configured):
+
+```bash
+npm run db:migrate    # uses DATABASE_URL_UNPOOLED (direct connection)
+```
+
+Migrations are intentionally **not** run during the Vercel build to avoid connection errors (`P1001`).
+
+### 4. Vercel build
+
+Vercel automatically runs `npm run vercel-build` on each deploy, which:
+- Generates the Prisma client (`prisma generate`)
+- Builds the Next.js application (`next build`)
+
+### Secret hygiene
+
+- **Never** commit real credentials to version control. `.env*` files are already excluded by `.gitignore`.
+- Store all secrets in **Vercel → Project → Settings → Environment Variables**, not in the repo.
+- Rotate `ADMIN_API_KEY` and `SESSION_SECRET` regularly and update them in Vercel.
+- Avoid printing `DATABASE_URL` or `DATABASE_URL_UNPOOLED` in logs, scripts, or error messages.
+
+---
+
+## Local development (optional)
+
+> These steps are for contributors running the app locally. For production use, follow the Vercel deployment steps above.
 
 ### 1. Clone & install
 
@@ -43,15 +94,8 @@ npm install
 cp .env.example .env.local
 ```
 
-Edit `.env.local` and fill in **all** required values (see table below).
-
-| Variable                | Required | Description |
-|-------------------------|----------|-------------|
-| `DATABASE_URL`          | ✅ Yes   | Pooled Neon connection URL (runtime, via PgBouncer) |
-| `DATABASE_URL_UNPOOLED` | ✅ Yes   | Direct Neon connection URL (migrations only) |
-| `ADMIN_API_KEY`         | ✅ Yes   | Secret for admin API endpoints — `openssl rand -base64 32` |
-| `SESSION_SECRET`        | ✅ Yes   | Secret for signing session cookies — `openssl rand -base64 32` |
-| `NEXT_PUBLIC_APP_URL`   | ✅ Yes   | Public URL of the app (e.g. `http://localhost:3000` locally) |
+Edit `.env.local` and fill in **all** required values. See `.env.example` for descriptions.  
+`.env.local` is excluded by `.gitignore` — never commit it.
 
 > **Neon tip:** create a free project at <https://neon.tech>. The *Connection Details* panel gives you both the pooled (`?pgbouncer=true`) and direct URLs.
 
@@ -74,31 +118,6 @@ npm run dev
 | <http://localhost:3000> | Trading dashboard |
 | <http://localhost:3000/admin> | Admin panel (requires `ADMIN_API_KEY`) |
 | <http://localhost:3000/register> | User registration |
-
-## Deploying to Vercel
-
-1. Import this repository in [Vercel](https://vercel.com/new).
-2. Set **all** of the following environment variables in  
-   **Vercel → Project → Settings → Environment Variables**:
-
-   | Variable                | Value |
-   |-------------------------|-------|
-   | `DATABASE_URL`          | Pooled Neon connection URL |
-   | `DATABASE_URL_UNPOOLED` | Direct Neon connection URL |
-   | `ADMIN_API_KEY`         | `openssl rand -base64 32` |
-   | `SESSION_SECRET`        | `openssl rand -base64 32` |
-   | `NEXT_PUBLIC_APP_URL`   | Your Vercel deployment URL |
-
-   > ⚠️ **`SESSION_SECRET` is required in production.** The app will throw an error on startup if it is missing.
-
-3. Apply migrations **before** deploying (run this locally with your `.env.local` configured):
-   ```bash
-   npm run db:migrate
-   ```
-   Ensure `DATABASE_URL_UNPOOLED` is set so Prisma can use the direct connection for migrations.
-4. Vercel will automatically run `npm run vercel-build` which:
-   - Generates the Prisma client (`prisma generate`)
-   - Builds the Next.js application (`next build`)
 
 ## npm scripts
 
