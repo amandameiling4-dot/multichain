@@ -35,13 +35,21 @@ npm install
 cp .env.example .env.local
 ```
 
-Edit `.env.local` and fill in your [Neon](https://neon.tech) connection strings and an `ADMIN_API_KEY`.
+Edit `.env.local` and fill in the following values (no secrets committed to source control):
+
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | Pooled Neon connection URL (PgBouncer host) — used by Prisma at runtime |
+| `DATABASE_URL_UNPOOLED` | Direct (non-pooler) Neon connection URL — used only for migrations |
+| `ADMIN_API_KEY` | Secret key for admin endpoints. Generate with: `openssl rand -base64 32` |
+| `SESSION_SECRET` | Secret used to sign session tokens. Generate with: `openssl rand -base64 32` |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` locally; your Vercel URL in production |
 
 ### 3. Run database migrations
 
 ```bash
 npm run db:generate   # generate Prisma client
-npm run db:migrate    # apply migrations to your Neon database
+npm run db:migrate    # apply migrations (uses DATABASE_URL_UNPOOLED)
 npm run db:seed       # optional: populate sample data
 ```
 
@@ -57,14 +65,16 @@ Visit [http://localhost:3000](http://localhost:3000) for the trading dashboard a
 
 1. Import this repository in [Vercel](https://vercel.com/new).
 2. Set the following environment variables in Vercel → Project → Settings → Environment Variables:
-   - `DATABASE_URL` — pooled Neon connection URL
-   - `DATABASE_URL_UNPOOLED` — direct Neon connection URL (for migrations)
+   - `DATABASE_URL` — pooled Neon connection URL (PgBouncer host)
+   - `DATABASE_URL_UNPOOLED` — direct Neon connection URL (non-pooler host, for migrations)
    - `ADMIN_API_KEY` — a secure random string (`openssl rand -base64 32`)
+   - `SESSION_SECRET` — a secure random string (`openssl rand -base64 32`)
    - `NEXT_PUBLIC_APP_URL` — your Vercel deployment URL
 3. Before deploying (or after schema changes), apply migrations from your local machine with your Neon credentials configured in `.env.local`:
    ```bash
    npm run db:migrate
    ```
+   Ensure `DATABASE_URL_UNPOOLED` is set so Prisma can use the direct connection for migrations.
 4. Vercel will automatically run `npm run vercel-build` which:
    - Generates the Prisma client (`prisma generate`)
    - Builds the Next.js application (`next build`)
