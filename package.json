@@ -12,7 +12,7 @@
     "db:generate": "prisma generate",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build"
+    "vercel-build": "prisma generate && next build"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.1",

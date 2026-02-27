@@ -61,9 +61,12 @@ Visit [http://localhost:3000](http://localhost:3000) for the trading dashboard a
    - `DATABASE_URL_UNPOOLED` — direct Neon connection URL (for migrations)
    - `ADMIN_API_KEY` — a secure random string (`openssl rand -base64 32`)
    - `NEXT_PUBLIC_APP_URL` — your Vercel deployment URL
-3. Vercel will automatically run `npm run vercel-build` which:
+3. Before deploying (or after schema changes), apply migrations from your local machine with your Neon credentials configured in `.env.local`:
+   ```bash
+   npm run db:migrate
+   ```
+4. Vercel will automatically run `npm run vercel-build` which:
    - Generates the Prisma client (`prisma generate`)
-   - Applies pending migrations (`prisma migrate deploy`)
    - Builds the Next.js application (`next build`)
 
 ## API reference
