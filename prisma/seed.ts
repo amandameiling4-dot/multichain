@@ -1,6 +1,9 @@
 /**
  * Seed script: populates the database with sample trading data.
  * Run with: npm run db:seed
+ *
+ * Uses DATABASE_URL (pooled PgBouncer connection) for runtime DB access.
+ * Ensure DATABASE_URL is set in your .env.local (or environment) before running.
  */
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
