@@ -95,6 +95,7 @@ npm run dev
    ```bash
    npm run db:migrate
    ```
+   Ensure `DATABASE_URL_UNPOOLED` is set so Prisma can use the direct connection for migrations.
 4. Vercel will automatically run `npm run vercel-build` which:
    - Generates the Prisma client (`prisma generate`)
    - Builds the Next.js application (`next build`)
