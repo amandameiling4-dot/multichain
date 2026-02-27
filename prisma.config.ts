@@ -7,7 +7,10 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    // Use the direct (unpooled) connection for migrations on Neon
+    // Migrations must use the direct (unpooled) connection on Neon to bypass
+    // PgBouncer, which does not support DDL transaction statements.
+    // DATABASE_URL_UNPOOLED is the direct URL; DATABASE_URL is the pooled
+    // fallback (used only when the unpooled variable is not set).
     url: process.env["DATABASE_URL_UNPOOLED"] ?? process.env["DATABASE_URL"],
   },
 });

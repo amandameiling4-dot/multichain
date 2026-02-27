@@ -58,9 +58,9 @@ Edit `.env.local` and fill in **all** required values (see table below).
 ### 3. Run database migrations
 
 ```bash
-npm run db:generate   # generate Prisma client
-npm run db:migrate    # apply all migrations to your Neon database
-npm run db:seed       # optional: populate sample assets, trades, and an admin user
+npm run db:generate   # generate Prisma client (no DB connection needed)
+npm run db:migrate    # apply migrations — uses DATABASE_URL_UNPOOLED (direct connection)
+npm run db:seed       # optional: populate sample data — uses DATABASE_URL (pooled connection)
 ```
 
 ### 4. Start the dev server
