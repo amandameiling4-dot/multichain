@@ -1,0 +1,26 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node-terminal",
+      "name": "Next.js dev",
+      "request": "launch",
+      "command": "npm run dev",
+      "envFile": "${workspaceFolder}/.env.local"
+    },
+    {
+      "type": "node-terminal",
+      "name": "Next.js build",
+      "request": "launch",
+      "command": "npm run build",
+      "envFile": "${workspaceFolder}/.env.local"
+    },
+    {
+      "type": "node-terminal",
+      "name": "Prisma Studio",
+      "request": "launch",
+      "command": "npm run db:studio",
+      "envFile": "${workspaceFolder}/.env.local"
+    }
+  ]
+}
