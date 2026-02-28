@@ -138,7 +138,7 @@ npm run dev
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/health` | Health check — DB connectivity + latency (HTTP 200 / 503) |
+| GET | `/api/health` | Health check — `{ status, version, uptime, db: { status, latencyMs }, timestamp }` (HTTP 200 / 503) |
 | GET | `/api/assets` | List active trading assets |
 | POST | `/api/assets` | Create a new asset |
 | GET | `/api/trades` | List trades (paginated) |
@@ -228,6 +228,7 @@ multichain/
 │   │   └── ChatWidget.tsx      # Live chat widget
 │   └── app/
 │       ├── page.tsx            # Trading dashboard (home)
+│       ├── sitemap.ts          # /sitemap.xml — public pages only (/ and /register)
 │       ├── admin/page.tsx      # Admin back-office panel
 │       ├── register/page.tsx   # User registration page
 │       ├── trade/page.tsx      # Binary options trading
