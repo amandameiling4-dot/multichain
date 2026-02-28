@@ -1,0 +1,24 @@
+User-agent: *
+
+# Allow public marketing/product pages
+Allow: /$
+Allow: /register
+
+# Disallow user-specific and admin pages
+Disallow: /admin
+Disallow: /wallet
+Disallow: /withdraw
+Disallow: /kyc
+Disallow: /history
+Disallow: /notifications
+Disallow: /settings
+Disallow: /support
+Disallow: /trade
+Disallow: /futures
+Disallow: /arbitrage
+Disallow: /demo
+Disallow: /p2p
+Disallow: /borrow
+
+# Disallow all API routes
+Disallow: /api/

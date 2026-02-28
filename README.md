@@ -138,6 +138,7 @@ npm run dev
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| GET | `/api/health` | Health check — DB connectivity + latency (HTTP 200 / 503) |
 | GET | `/api/assets` | List active trading assets |
 | POST | `/api/assets` | Create a new asset |
 | GET | `/api/trades` | List trades (paginated) |
