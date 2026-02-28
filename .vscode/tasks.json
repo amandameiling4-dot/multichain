@@ -1,0 +1,49 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Dev server",
+      "type": "npm",
+      "script": "dev",
+      "problemMatcher": "$eslint-stylish",
+      "group": "build"
+    },
+    {
+      "label": "Build",
+      "type": "npm",
+      "script": "build",
+      "group": "build"
+    },
+    {
+      "label": "Start (prod)",
+      "type": "npm",
+      "script": "start",
+      "group": "build"
+    },
+    {
+      "label": "Lint",
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": "$eslint-stylish",
+      "group": "build"
+    },
+    {
+      "label": "DB migrate",
+      "type": "npm",
+      "script": "db:migrate",
+      "group": "build"
+    },
+    {
+      "label": "DB seed",
+      "type": "npm",
+      "script": "db:seed",
+      "group": "build"
+    },
+    {
+      "label": "Prisma generate",
+      "type": "npm",
+      "script": "db:generate",
+      "group": "build"
+    }
+  ]
+}
