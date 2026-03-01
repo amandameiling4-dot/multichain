@@ -47,7 +47,7 @@ export async function PATCH(request: NextRequest) {
 
   const proof = await prisma.depositProof.update({
     where: { id },
-    data: { status, adminNote, reviewedAt: new Date() },
+    data: { status, ...(adminNote !== undefined && { adminNote }), reviewedAt: new Date() },
   });
 
   // Notify user

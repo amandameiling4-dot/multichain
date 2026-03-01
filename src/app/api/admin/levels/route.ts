@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get("type");
 
   const levels = await prisma.tradingLevel.findMany({
-    where: type ? { type: type as "BINARY" | "ARBITRAGE" } : undefined,
+    ...(type ? { where: { type: type as "BINARY" | "ARBITRAGE" } } : {}),
     orderBy: { createdAt: "asc" },
   });
   return Response.json(levels);
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       minAmount,
       maxAmount,
       payoutPct,
-      description,
+      ...(description !== undefined && { description }),
     },
   });
   return Response.json(level, { status: 201 });

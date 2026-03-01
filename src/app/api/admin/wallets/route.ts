@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "network and address are required" }, { status: 400 });
   }
 
-  const wallet = await prisma.depositWallet.create({ data: { network, address, label } });
+  const wallet = await prisma.depositWallet.create({ data: { network, address, ...(label !== undefined && { label }) } });
   return Response.json(wallet, { status: 201 });
 }
 

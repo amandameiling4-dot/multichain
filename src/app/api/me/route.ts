@@ -68,7 +68,10 @@ export async function PATCH(request: NextRequest) {
     if (!user) return Response.json({ error: "User not found" }, { status: 404 });
     const updated = await prisma.appUser.update({
       where: { id: user.id },
-      data: { displayName: body.displayName, email: body.email },
+      data: {
+        ...(body.displayName !== undefined && { displayName: body.displayName }),
+        ...(body.email !== undefined && { email: body.email }),
+      },
     });
     return Response.json({ id: updated.id, displayName: updated.displayName, email: updated.email });
   }
@@ -76,7 +79,10 @@ export async function PATCH(request: NextRequest) {
   const body = await request.json() as { displayName?: string; email?: string };
   const updated = await prisma.appUser.update({
     where: { id: session.userId },
-    data: { displayName: body.displayName, email: body.email },
+    data: {
+      ...(body.displayName !== undefined && { displayName: body.displayName }),
+      ...(body.email !== undefined && { email: body.email }),
+    },
   });
   return Response.json({ id: updated.id, displayName: updated.displayName, email: updated.email });
 }

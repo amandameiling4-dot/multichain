@@ -188,9 +188,14 @@ export default function WithdrawPage() {
               <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
                 <h3 className="text-sm font-semibold text-gray-300 mb-2">Status Guide</h3>
                 <div className="space-y-1.5">
-                  {[["PENDING", "Awaiting admin review"], ["APPROVED", "Approved, processing"], ["PAID", "Payment sent"], ["REJECTED", "Request rejected"]].map(([s, desc]) => (
+                  {([
+                    ["PENDING", "Awaiting admin review"],
+                    ["APPROVED", "Approved, processing"],
+                    ["PAID", "Payment sent"],
+                    ["REJECTED", "Request rejected"],
+                  ] as [string, string][]).map(([s, desc]) => (
                     <div key={s} className="flex items-center gap-2 text-xs">
-                      <span className={`px-2 py-0.5 rounded ${STATUS_STYLE[s]}`}>{s}</span>
+                      <span className={`px-2 py-0.5 rounded ${STATUS_STYLE[s] ?? ""}`}>{s}</span>
                       <span className="text-gray-400">{desc}</span>
                     </div>
                   ))}

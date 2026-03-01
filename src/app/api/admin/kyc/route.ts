@@ -37,7 +37,7 @@ export async function PUT(request: NextRequest) {
 
   const submission = await prisma.kYCSubmission.update({
     where: { id },
-    data: { status: status as "APPROVED" | "REJECTED", reviewNote, reviewedAt: new Date() },
+    data: { status: status as "APPROVED" | "REJECTED", ...(reviewNote !== undefined && { reviewNote }), reviewedAt: new Date() },
   });
 
   // Notify user

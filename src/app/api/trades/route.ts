@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  const nextCursor = trades.length === limit ? trades[trades.length - 1].id : null;
+  const nextCursor = trades.length === limit ? trades[trades.length - 1]!.id : null;
   return Response.json({ trades, nextCursor });
 }
 
