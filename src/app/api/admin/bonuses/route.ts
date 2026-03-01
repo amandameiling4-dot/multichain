@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       type: type as "WELCOME" | "REFERRAL" | "CASHBACK" | "STAKING",
       name,
       value,
-      description,
+      ...(description !== undefined && { description }),
     },
   });
   return Response.json(bonus, { status: 201 });

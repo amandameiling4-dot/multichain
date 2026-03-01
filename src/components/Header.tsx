@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 interface HeaderProps {
-  wallet?: string;
+  wallet?: string | undefined;
   onMenuToggle: () => void;
 }
 

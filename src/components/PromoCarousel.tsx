@@ -33,7 +33,7 @@ export default function PromoCarousel() {
     return () => clearInterval(timer);
   }, []);
 
-  const slide = slides[current];
+  const slide = slides[current]!;
 
   return (
     <div className={`bg-gradient-to-r ${slide.color} border border-gray-800 rounded-xl p-8 relative overflow-hidden transition-all duration-500`}>

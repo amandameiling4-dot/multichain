@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "currencyId, name, and symbol are required" }, { status: 400 });
     }
     const network = await prisma.network.create({
-      data: { currencyId, name, symbol, chainId, fee: fee ?? 0, minDeposit: minDeposit ?? 0 },
+      data: { currencyId, name, symbol, ...(chainId !== undefined && { chainId }), fee: fee ?? 0, minDeposit: minDeposit ?? 0 },
     });
     return Response.json(network, { status: 201 });
   }

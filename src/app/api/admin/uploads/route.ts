@@ -37,7 +37,7 @@ export async function PUT(request: NextRequest) {
 
   const proof = await prisma.depositProof.update({
     where: { id },
-    data: { status: status as "APPROVED" | "REJECTED", adminNote, reviewedAt: new Date() },
+    data: { status: status as "APPROVED" | "REJECTED", ...(adminNote !== undefined && { adminNote }), reviewedAt: new Date() },
   });
   return Response.json(proof);
 }

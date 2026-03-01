@@ -87,11 +87,11 @@ export default function MarketOverview() {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="bg-gray-800 rounded-lg p-3">
                   <div className="text-gray-400 text-xs mb-1">Close</div>
-                  <div className="text-white font-mono">${parseFloat(prices[selected.id].close).toLocaleString()}</div>
+                  <div className="text-white font-mono">${parseFloat(prices[selected.id]!.close).toLocaleString()}</div>
                 </div>
                 <div className="bg-gray-800 rounded-lg p-3">
                   <div className="text-gray-400 text-xs mb-1">Open</div>
-                  <div className="text-white font-mono">${parseFloat(prices[selected.id].open).toLocaleString()}</div>
+                  <div className="text-white font-mono">${parseFloat(prices[selected.id]!.open).toLocaleString()}</div>
                 </div>
               </div>
             )}

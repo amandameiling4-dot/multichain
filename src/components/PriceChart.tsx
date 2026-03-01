@@ -29,7 +29,7 @@ export default function PriceChart() {
       .then((r) => r.json())
       .then((data: Asset[]) => {
         setAssets(data);
-        if (data.length > 0) setSelectedAsset(data[0]);
+        if (data.length > 0) setSelectedAsset(data[0]!);
       })
       .catch(console.error);
   }, []);
@@ -42,8 +42,8 @@ export default function PriceChart() {
       .catch(console.error);
   }, [selectedAsset, interval]);
 
-  const latestClose = snapshots.length > 0 ? Number(snapshots[snapshots.length - 1].close) : null;
-  const prevClose = snapshots.length > 1 ? Number(snapshots[snapshots.length - 2].close) : null;
+  const latestClose = snapshots.length > 0 ? Number(snapshots[snapshots.length - 1]!.close) : null;
+  const prevClose = snapshots.length > 1 ? Number(snapshots[snapshots.length - 2]!.close) : null;
   const pctChange = latestClose && prevClose ? ((latestClose - prevClose) / prevClose) * 100 : null;
 
   return (

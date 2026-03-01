@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
       if (recent.length > 0) {
         // recent[0] is the most recent trade (desc order)
-        lastSeenAt = recent[0].tradedAt;
+        lastSeenAt = recent[0]!.tradedAt;
         send({ type: "snapshot", trades: recent.reverse() });
       }
 
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
 
           if (newTrades.length > 0) {
             // Advance the cursor to the latest trade seen
-            lastSeenAt = newTrades[newTrades.length - 1].tradedAt;
+            lastSeenAt = newTrades[newTrades.length - 1]!.tradedAt;
             for (const trade of newTrades) {
               send({ type: "trade", trade });
             }

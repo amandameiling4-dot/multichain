@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       assetSymbol: assetSymbol.toUpperCase(),
       condition: condition as "PRICE_ABOVE" | "PRICE_BELOW" | "VOLUME_ABOVE",
       threshold,
-      message,
+      ...(message !== undefined && { message }),
     },
   });
   return Response.json(alert, { status: 201 });

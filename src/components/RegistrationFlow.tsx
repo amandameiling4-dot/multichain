@@ -14,7 +14,7 @@ export default function RegistrationFlow({ onComplete }: RegistrationFlowProps) 
   const [userId] = useState(() => {
     const arr = new Uint32Array(1);
     crypto.getRandomValues(arr);
-    return String(10000 + (arr[0] % 90000));
+    return String(10000 + (arr[0]! % 90000));
   });
 
   function handleEmailSubmit() {

@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   }
 
   const asset = await prisma.asset.create({
-    data: { symbol: symbol.toUpperCase(), name, logoUrl },
+    data: { symbol: symbol.toUpperCase(), name, ...(logoUrl !== undefined && { logoUrl }) },
   });
   return Response.json(asset, { status: 201 });
 }

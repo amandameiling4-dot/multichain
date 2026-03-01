@@ -66,7 +66,7 @@ async function main() {
         price,
         quantity,
         total,
-        exchange: EXCHANGES[Math.floor(Math.random() * EXCHANGES.length)],
+        exchange: EXCHANGES[Math.floor(Math.random() * EXCHANGES.length)]!,
         tradedAt: new Date(Date.now() - i * 60_000),
       };
     });

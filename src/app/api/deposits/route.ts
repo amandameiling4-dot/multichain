@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   }
 
   const proof = await prisma.depositProof.create({
-    data: { userId, amount, network, txHash, screenshot },
+    data: { userId, amount, network, txHash, ...(screenshot !== undefined && { screenshot }) },
   });
 
   // Create notification
