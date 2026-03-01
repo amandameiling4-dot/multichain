@@ -11,6 +11,6 @@ export default defineConfig({
     // PgBouncer, which does not support DDL transaction statements.
     // DATABASE_URL_UNPOOLED is the direct URL; DATABASE_URL is the pooled
     // fallback (used only when the unpooled variable is not set).
-    url: process.env["DATABASE_URL_UNPOOLED"] ?? process.env["DATABASE_URL"],
+    url: process.env["DATABASE_URL_UNPOOLED"] ?? process.env["DATABASE_URL"] ?? "",
   },
 });
