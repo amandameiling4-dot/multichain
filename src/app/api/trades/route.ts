@@ -1,12 +1,19 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { broadcastTrade, type BroadcastTrade } from "@/lib/ws-manager";
+import { corsHeaders, handlePreflight } from "@/lib/cors";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/trades
  * Query params: assetId, side, limit (default 50), cursor
+ * CORS-enabled for React Native / mobile clients.
  */
+export function OPTIONS() {
+  return handlePreflight();
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const assetId = searchParams.get("assetId") ?? undefined;
@@ -28,7 +35,7 @@ export async function GET(request: NextRequest) {
   });
 
   const nextCursor = trades.length === limit ? trades[trades.length - 1]!.id : null;
-  return Response.json({ trades, nextCursor });
+  return Response.json({ trades, nextCursor }, { headers: corsHeaders });
 }
 
 /**
@@ -68,6 +75,9 @@ export async function POST(request: NextRequest) {
     },
     include: { asset: { select: { symbol: true, name: true } } },
   });
+
+  // Push the new trade to all connected WebSocket clients immediately
+  broadcastTrade(trade as BroadcastTrade);
 
   return Response.json(trade, { status: 201 });
 }

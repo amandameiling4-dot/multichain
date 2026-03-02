@@ -11,7 +11,8 @@ import pkg from "./package.json";
 // ─ img-src:    data: and blob: for in-browser image previews; https: for
 //               remote asset logo URLs whose domain is not known at build time.
 // ─ connect-src: 'self' covers fetch + SSE (/api/stream); wss: allows the
-//               Next.js HMR WebSocket in development.
+//               Next.js HMR WebSocket in development as well as the custom
+//               WebSocket server at /api/ws.
 // ─ frame-ancestors 'none' duplicates X-Frame-Options for CSP-aware browsers.
 const CSP = [
   "default-src 'self'",
@@ -19,7 +20,7 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self'",
-  "connect-src 'self' wss:",
+  "connect-src 'self' ws: wss:",
   "frame-src 'none'",
   "frame-ancestors 'none'",
   "object-src 'none'",

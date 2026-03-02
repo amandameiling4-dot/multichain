@@ -1,18 +1,24 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { corsHeaders, handlePreflight } from "@/lib/cors";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/assets
  * Returns all active trading assets.
+ * CORS-enabled for React Native / mobile clients.
  */
+export function OPTIONS() {
+  return handlePreflight();
+}
+
 export async function GET() {
   const assets = await prisma.asset.findMany({
     where: { isActive: true },
     orderBy: { symbol: "asc" },
   });
-  return Response.json(assets);
+  return Response.json(assets, { headers: corsHeaders });
 }
 
 /**
