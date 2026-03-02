@@ -73,18 +73,44 @@ const schema = buildSchema(`
   }
 `);
 
+// ─── Serialisation helpers ────────────────────────────────────────────────────
+
+/** Convert a Prisma Decimal (or number/string) to a plain JS string. */
+function serializeDecimal(v: { toString(): string }): string {
+  return v.toString();
+}
+
+/** Convert a JS Date to an ISO-8601 string. */
+function serializeDate(d: Date): string {
+  return d.toISOString();
+}
+
+/** Serialize an Asset row so all fields are plain JS primitives. */
+function serializeAsset(a: {
+  id: string;
+  symbol: string;
+  name: string;
+  logoUrl: string | null;
+  isActive: boolean;
+  createdAt: Date;
+}) {
+  return { ...a, createdAt: serializeDate(a.createdAt) };
+}
+
 // ─── Resolvers ────────────────────────────────────────────────────────────────
 
 const rootValue = {
   assets: async ({ active }: { active?: boolean }) => {
-    return prisma.asset.findMany({
+    const rows = await prisma.asset.findMany({
       where: active !== undefined ? { isActive: active } : {},
       orderBy: { symbol: "asc" },
     });
+    return rows.map(serializeAsset);
   },
 
   asset: async ({ id }: { id: string }) => {
-    return prisma.asset.findUnique({ where: { id } });
+    const a = await prisma.asset.findUnique({ where: { id } });
+    return a ? serializeAsset(a) : null;
   },
 
   trades: async ({
@@ -97,7 +123,7 @@ const rootValue = {
     limit?: number;
   }) => {
     const take = Math.min(limit, 200);
-    return prisma.trade.findMany({
+    const rows = await prisma.trade.findMany({
       where: {
         ...(assetId ? { assetId } : {}),
         ...(side ? { side } : {}),
@@ -106,6 +132,14 @@ const rootValue = {
       take,
       include: { asset: true },
     });
+    return rows.map((t) => ({
+      ...t,
+      price: serializeDecimal(t.price),
+      quantity: serializeDecimal(t.quantity),
+      total: serializeDecimal(t.total),
+      tradedAt: serializeDate(t.tradedAt),
+      asset: serializeAsset(t.asset),
+    }));
   },
 
   prices: async ({
@@ -118,11 +152,20 @@ const rootValue = {
     limit?: number;
   }) => {
     const take = Math.min(limit, 500);
-    return prisma.priceSnapshot.findMany({
+    const rows = await prisma.priceSnapshot.findMany({
       where: { assetId, interval },
       orderBy: { timestamp: "asc" },
       take,
     });
+    return rows.map((s) => ({
+      ...s,
+      open: serializeDecimal(s.open),
+      high: serializeDecimal(s.high),
+      low: serializeDecimal(s.low),
+      close: serializeDecimal(s.close),
+      volume: serializeDecimal(s.volume),
+      timestamp: serializeDate(s.timestamp),
+    }));
   },
 };
 
