@@ -34,7 +34,7 @@ The recommended way to run MultiChain is to deploy it publicly on [Vercel](https
 ### 1. Create a Neon database
 
 Create a free project at <https://neon.tech>. From the *Connection Details* panel, copy both:
-- **Pooled** connection string (includes `?pgbouncer=true`) — used at runtime
+- **Pooled** connection string — used at runtime (do **not** add `?pgbouncer=true`; the `@prisma/adapter-pg` driver handles pooling directly)
 - **Direct** (unpooled) connection string — used for migrations only
 
 ### 2. Import the repository into Vercel
@@ -97,7 +97,7 @@ cp .env.example .env.local
 Edit `.env.local` and fill in **all** required values. See `.env.example` for descriptions.  
 `.env.local` is excluded by `.gitignore` — never commit it.
 
-> **Neon tip:** create a free project at <https://neon.tech>. The *Connection Details* panel gives you both the pooled (`?pgbouncer=true`) and direct URLs.
+> **Neon tip:** create a free project at <https://neon.tech>. The *Connection Details* panel gives you both the pooled and direct (unpooled) URLs. Do **not** add `?pgbouncer=true` to `DATABASE_URL` — the `@prisma/adapter-pg` driver handles the pooled connection directly.
 
 ### 3. Run database migrations
 
