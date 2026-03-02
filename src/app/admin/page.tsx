@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 
 // ── Type definitions ────────────────────────────────────────────────────────
@@ -77,6 +77,53 @@ interface AuditEntry {
   entityType?: string;
   entityId?: string;
   after?: string;
+  createdAt: string;
+  user?: { walletAddress: string; displayName?: string };
+}
+
+interface AdminBinaryTrade {
+  id: string;
+  userId: string;
+  direction: string;
+  amount: string;
+  expiry: number;
+  payoutPct: string;
+  entryPrice?: string;
+  exitPrice?: string;
+  profit?: string;
+  status: string;
+  outcome?: string;
+  expiresAt: string;
+  settledAt?: string;
+  createdAt: string;
+  asset: { symbol: string; name: string };
+  user?: { walletAddress: string; displayName?: string; email?: string };
+}
+
+interface ChatMessage {
+  id: string;
+  sender: string;
+  content: string;
+  createdAt: string;
+  readAt?: string;
+}
+
+interface AdminChatSession {
+  id: string;
+  status: string;
+  lastMessage?: string;
+  lastMsgAt?: string;
+  updatedAt: string;
+  user?: { walletAddress: string; displayName?: string };
+  messages: ChatMessage[];
+}
+
+interface ActivityEntry {
+  id: string;
+  userId?: string;
+  action: string;
+  details?: string;
+  ipAddress?: string;
   createdAt: string;
   user?: { walletAddress: string; displayName?: string };
 }
@@ -561,9 +608,332 @@ function AuditSection({ headers }: { headers: Record<string, string> }) {
   );
 }
 
+// ── Chat section ──────────────────────────────────────────────────────────────
+
+function ChatSection({ headers }: { headers: Record<string, string> }) {
+  const [sessions, setSessions] = useState<AdminChatSession[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [selected, setSelected] = useState<AdminChatSession | null>(null);
+  const [reply, setReply] = useState("");
+  const [sending, setSending] = useState(false);
+
+  function load() {
+    setLoaded(false);
+    fetch("/api/admin/chat", { headers })
+      .then((r) => r.json())
+      .then((d: AdminChatSession[]) => { if (Array.isArray(d)) setSessions(d); })
+      .finally(() => setLoaded(true));
+  }
+
+  async function sendReply(sessionId: string) {
+    if (!reply.trim()) return;
+    setSending(true);
+    await fetch("/api/admin/chat", {
+      method: "PUT", headers,
+      body: JSON.stringify({ sessionId, action: "reply", content: reply }),
+    });
+    setReply("");
+    load();
+    setSending(false);
+  }
+
+  async function closeSession(sessionId: string) {
+    await fetch(`/api/admin/chat?id=${sessionId}`, { method: "DELETE", headers });
+    setSelected(null);
+    load();
+  }
+
+  return (
+    <section className="bg-gray-900 border border-gray-800 rounded-xl p-6 flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-100">Live Chat Sessions</h2>
+        <button onClick={load} className="text-xs px-3 py-1 rounded bg-gray-800 text-gray-400 hover:bg-gray-700">↻ Load</button>
+      </div>
+      {!loaded ? (
+        <p className="text-gray-500 text-sm">Click ↻ Load to fetch chat sessions</p>
+      ) : sessions.length === 0 ? (
+        <p className="text-gray-500 text-sm">No chat sessions.</p>
+      ) : (
+        <div className="grid lg:grid-cols-2 gap-4">
+          {/* Session list */}
+          <div className="space-y-2 overflow-y-auto max-h-[500px]">
+            {sessions.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setSelected(s)}
+                className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                  selected?.id === s.id
+                    ? "border-blue-600 bg-blue-900/20"
+                    : "border-gray-800 bg-gray-800/40 hover:border-gray-700"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-gray-300 font-medium">
+                    {s.user?.displayName ?? s.user?.walletAddress?.slice(0, 10) ?? "Unknown"}
+                  </span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${s.status === "OPEN" ? "bg-green-900/50 text-green-400" : "bg-gray-700 text-gray-400"}`}>
+                    {s.status}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 truncate">{s.lastMessage ?? "No messages yet"}</p>
+                <p className="text-xs text-gray-600 mt-0.5">{s.messages.length} messages</p>
+              </button>
+            ))}
+          </div>
+
+          {/* Chat panel */}
+          {selected ? (
+            <div className="border border-gray-800 rounded-xl flex flex-col" style={{ height: "500px" }}>
+              <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
+                <span className="text-sm font-medium text-white">
+                  {selected.user?.displayName ?? selected.user?.walletAddress?.slice(0, 12) ?? "User"}
+                </span>
+                <div className="flex gap-2">
+                  {selected.status === "OPEN" && (
+                    <button
+                      onClick={() => closeSession(selected.id)}
+                      className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded"
+                    >
+                      Close Session
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {selected.messages.map((msg) => (
+                  <div key={msg.id} className={`flex ${msg.sender === "user" ? "justify-start" : "justify-end"}`}>
+                    <div className={`max-w-[75%] px-3 py-1.5 rounded-lg text-xs ${
+                      msg.sender === "user" ? "bg-gray-800 text-gray-200" : "bg-blue-700 text-white"
+                    }`}>
+                      <div className="font-medium mb-0.5 text-gray-400">{msg.sender === "user" ? "User" : "Support"}</div>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {selected.status === "OPEN" && (
+                <div className="border-t border-gray-800 p-3 flex gap-2">
+                  <input
+                    value={reply}
+                    onChange={(e) => setReply(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && sendReply(selected.id)}
+                    placeholder="Type reply..."
+                    className="flex-1 bg-gray-800 border border-gray-700 text-white text-xs rounded px-3 py-1.5"
+                  />
+                  <button
+                    onClick={() => sendReply(selected.id)}
+                    disabled={sending}
+                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs px-3 py-1.5 rounded"
+                  >
+                    Send
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="border border-gray-800 rounded-xl flex items-center justify-center text-gray-500 text-sm" style={{ height: "200px" }}>
+              Select a session to view
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ── Binary Trades section ────────────────────────────────────────────────────
+
+function BinaryTradesSection({ headers }: { headers: Record<string, string> }) {
+  const [trades, setTrades] = useState<AdminBinaryTrade[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("ACTIVE");
+  const [settling, setSettling] = useState<string | null>(null);
+  const [settleOutcome, setSettleOutcome] = useState<"WIN" | "LOSS">("WIN");
+
+  function load(s = statusFilter) {
+    setLoaded(false);
+    fetch(`/api/admin/binary-trades?status=${s}&limit=100`, { headers })
+      .then((r) => r.json())
+      .then((d: AdminBinaryTrade[]) => { if (Array.isArray(d)) setTrades(d); })
+      .finally(() => setLoaded(true));
+  }
+
+  function changeStatus(s: string) { setStatusFilter(s); load(s); }
+
+  async function settle(id: string, outcome: "WIN" | "LOSS") {
+    await fetch("/api/admin/binary-trades", {
+      method: "PATCH", headers,
+      body: JSON.stringify({ id, outcome }),
+    });
+    setSettling(null);
+    load();
+  }
+
+  return (
+    <section className="bg-gray-900 border border-gray-800 rounded-xl p-6 flex flex-col gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-lg font-semibold text-gray-100">Binary Trades</h2>
+        <div className="flex gap-1">
+          {["ACTIVE", "SETTLED", "CANCELLED"].map((s) => (
+            <button key={s} onClick={() => changeStatus(s)}
+              className={`text-xs px-2 py-1 rounded transition-colors ${statusFilter === s ? "bg-blue-700 text-white" : "bg-gray-800 text-gray-400 hover:bg-gray-700"}`}>
+              {s}
+            </button>
+          ))}
+          <button onClick={() => load()} className="text-xs px-2 py-1 rounded bg-gray-800 text-gray-400 hover:bg-gray-700">↻</button>
+        </div>
+      </div>
+      {!loaded ? (
+        <p className="text-gray-500 text-sm">Click ↻ to load</p>
+      ) : trades.length === 0 ? (
+        <p className="text-gray-500 text-sm">No {statusFilter.toLowerCase()} binary trades.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-gray-500 border-b border-gray-700">
+                <th className="pb-2 text-left pr-3">User</th>
+                <th className="pb-2 text-left pr-3">Asset</th>
+                <th className="pb-2 text-left pr-3">Dir</th>
+                <th className="pb-2 text-left pr-3">Amount</th>
+                <th className="pb-2 text-left pr-3">Payout</th>
+                <th className="pb-2 text-left pr-3">Status</th>
+                <th className="pb-2 text-left pr-3">Outcome</th>
+                <th className="pb-2 text-left">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trades.map((t) => (
+                <tr key={t.id} className="border-b border-gray-800/50">
+                  <td className="py-2 pr-3 text-gray-300 font-mono">
+                    {t.user?.displayName ?? t.user?.walletAddress?.slice(0, 8) ?? t.userId.slice(0, 8)}
+                  </td>
+                  <td className="py-2 pr-3 text-white font-medium">{t.asset.symbol}</td>
+                  <td className={`py-2 pr-3 font-bold ${t.direction === "UP" ? "text-green-400" : "text-red-400"}`}>
+                    {t.direction === "UP" ? "▲" : "▼"}
+                  </td>
+                  <td className="py-2 pr-3 text-white">${Number(t.amount).toFixed(2)}</td>
+                  <td className="py-2 pr-3 text-gray-400">{Number(t.payoutPct).toFixed(0)}%</td>
+                  <td className="py-2 pr-3">
+                    <span className={`px-1.5 py-0.5 rounded text-xs ${
+                      t.status === "ACTIVE" ? "bg-blue-900/50 text-blue-400" :
+                      t.status === "SETTLED" ? "bg-gray-700 text-gray-300" :
+                      "bg-yellow-900/50 text-yellow-400"
+                    }`}>{t.status}</span>
+                  </td>
+                  <td className="py-2 pr-3">
+                    {t.outcome ? (
+                      <span className={t.outcome === "WIN" ? "text-green-400" : "text-red-400"}>{t.outcome}</span>
+                    ) : "—"}
+                  </td>
+                  <td className="py-2">
+                    {t.status === "ACTIVE" && settling !== t.id && (
+                      <button onClick={() => setSettling(t.id)} className="bg-purple-700 hover:bg-purple-600 text-white text-xs px-2 py-0.5 rounded">
+                        Settle
+                      </button>
+                    )}
+                    {settling === t.id && (
+                      <div className="flex items-center gap-1">
+                        <select value={settleOutcome} onChange={(e) => setSettleOutcome(e.target.value as "WIN" | "LOSS")}
+                          className="bg-gray-800 border border-gray-700 text-white text-xs rounded px-1 py-0.5">
+                          <option value="WIN">WIN</option>
+                          <option value="LOSS">LOSS</option>
+                        </select>
+                        <button onClick={() => settle(t.id, settleOutcome)} className="bg-green-700 hover:bg-green-600 text-white text-xs px-1.5 py-0.5 rounded">✓</button>
+                        <button onClick={() => setSettling(null)} className="bg-gray-700 text-white text-xs px-1.5 py-0.5 rounded">✕</button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ── Live Activity section ────────────────────────────────────────────────────
+
+function ActivitySection({ headers }: { headers: Record<string, string> }) {
+  const [logs, setLogs] = useState<ActivityEntry[]>([]);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+
+  const authHeader = headers.Authorization;
+
+  const load = useCallback(() => {
+    fetch("/api/admin/audit?limit=50", { headers: { Authorization: authHeader ?? "", "Content-Type": "application/json" } })
+      .then((r) => r.json())
+      .then((d: ActivityEntry[]) => { if (Array.isArray(d)) setLogs(d); })
+      .catch(() => {});
+  }, [authHeader]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const interval = setInterval(load, 5000);
+    return () => clearInterval(interval);
+  }, [autoRefresh, load]);
+
+  return (
+    <section className="bg-gray-900 border border-gray-800 rounded-xl p-6 flex flex-col gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-lg font-semibold text-gray-100">Live Activity Feed</h2>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-xs text-gray-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              className="rounded"
+            />
+            Auto-refresh (5s)
+          </label>
+          {autoRefresh && <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />}
+          <button onClick={load} className="text-xs px-3 py-1 rounded bg-gray-800 text-gray-400 hover:bg-gray-700">↻ Refresh</button>
+        </div>
+      </div>
+      {logs.length === 0 ? (
+        <p className="text-gray-500 text-sm">No activity yet.</p>
+      ) : (
+        <div className="overflow-y-auto max-h-[500px]">
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-gray-900">
+              <tr className="text-gray-500 border-b border-gray-700">
+                <th className="pb-2 text-left pr-3">Time</th>
+                <th className="pb-2 text-left pr-3">Action</th>
+                <th className="pb-2 text-left pr-3">Entity</th>
+                <th className="pb-2 text-left">User</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.map((l) => (
+                <tr key={l.id} className="border-b border-gray-800/40 hover:bg-gray-800/20">
+                  <td className="py-1.5 pr-3 text-gray-500 whitespace-nowrap">
+                    {new Date(l.createdAt).toLocaleTimeString()}
+                  </td>
+                  <td className="py-1.5 pr-3 text-blue-300 font-medium">{l.action}</td>
+                  <td className="py-1.5 pr-3 text-gray-400">{(l as unknown as AuditEntry).entityType ?? "—"}</td>
+                  <td className="py-1.5 text-gray-300 font-mono">
+                    {l.user?.walletAddress?.slice(0, 10) ?? l.userId?.slice(0, 10) ?? "system"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ── Main admin page ─────────────────────────────────────────────────────────
 
-type AdminTab = "queues" | "users" | "system" | "audit";
+type AdminTab = "queues" | "users" | "chat" | "trades" | "activity" | "system" | "audit";
 
 export default function AdminPage() {
   const [apiKey, setApiKey] = useState(() => {
@@ -647,6 +1017,9 @@ export default function AdminPage() {
   const TABS: { key: AdminTab; label: string }[] = [
     { key: "queues", label: "Review Queues" },
     { key: "users", label: "Users" },
+    { key: "chat", label: "💬 Chat" },
+    { key: "trades", label: "📈 Binary Trades" },
+    { key: "activity", label: "⚡ Activity" },
     { key: "system", label: "System" },
     { key: "audit", label: "Audit Log" },
   ];
@@ -691,6 +1064,18 @@ export default function AdminPage() {
           <div className="grid grid-cols-1 gap-6">
             <UsersSection headers={headers} />
           </div>
+        )}
+
+        {activeTab === "chat" && (
+          <ChatSection headers={headers} />
+        )}
+
+        {activeTab === "trades" && (
+          <BinaryTradesSection headers={headers} />
+        )}
+
+        {activeTab === "activity" && (
+          <ActivitySection headers={headers} />
         )}
 
         {activeTab === "system" && (

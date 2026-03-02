@@ -1,12 +1,18 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { corsHeaders, handlePreflight } from "@/lib/cors";
 
 export const dynamic = "force-dynamic";
 
 /**
  * GET /api/prices
  * Query params: assetId (required), interval (default "1m"), limit (default 100)
+ * CORS-enabled for React Native / mobile clients.
  */
+export function OPTIONS() {
+  return handlePreflight();
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const assetId = searchParams.get("assetId");
@@ -14,7 +20,7 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(Number(searchParams.get("limit") ?? "100"), 500);
 
   if (!assetId) {
-    return Response.json({ error: "assetId is required" }, { status: 400 });
+    return Response.json({ error: "assetId is required" }, { status: 400, headers: corsHeaders });
   }
 
   const snapshots = await prisma.priceSnapshot.findMany({
@@ -23,7 +29,7 @@ export async function GET(request: NextRequest) {
     take: limit,
   });
 
-  return Response.json(snapshots.reverse());
+  return Response.json(snapshots.reverse(), { headers: corsHeaders });
 }
 
 /**

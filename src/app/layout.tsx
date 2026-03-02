@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import GlobalChat from "@/components/GlobalChat";
 
 export const metadata: Metadata = {
   title: "MultiChain — Real-Time Trading Dapp",
@@ -14,7 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <GlobalChat />
+      </body>
     </html>
   );
 }

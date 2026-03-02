@@ -22,34 +22,111 @@ interface Props {
   assetId?: string;
 }
 
+type ServerMessage =
+  | { type: "snapshot"; trades: Trade[] }
+  | { type: "trade"; trade: Trade };
+
+/**
+ * Connect to the real-time trade feed.
+ *
+ * Strategy:
+ *   1. Try WebSocket at ws(s)://host/api/ws  (custom server, faster)
+ *   2. If WebSocket is unavailable (e.g. serverless), fall back to SSE at
+ *      /api/stream so the component always works regardless of deployment.
+ */
+function openConnection(
+  assetId: string | undefined,
+  onMessage: (msg: ServerMessage) => void,
+  onStatusChange: (connected: boolean) => void,
+): () => void {
+  const qs = assetId ? `?assetId=${encodeURIComponent(assetId)}` : "";
+
+  // Build the WebSocket URL from the current page origin
+  const wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
+  const wsUrl = `${wsProtocol}//${location.host}/api/ws${qs}`;
+
+  let ws: WebSocket | null = null;
+  let es: EventSource | null = null;
+  let usedFallback = false;
+
+  function startSSEFallback() {
+    usedFallback = true;
+    es = new EventSource(`/api/stream${qs}`);
+    es.onopen = () => onStatusChange(true);
+    es.onerror = () => onStatusChange(false);
+    es.onmessage = (event: MessageEvent<string>) => {
+      try {
+        onMessage(JSON.parse(event.data) as ServerMessage);
+      } catch {
+        // ignore malformed frames
+      }
+    };
+  }
+
+  try {
+    ws = new WebSocket(wsUrl);
+
+    // Give WebSocket 3 s to connect; if it fails, switch to SSE
+    const fallbackTimer = setTimeout(() => {
+      if (ws && ws.readyState !== WebSocket.OPEN) {
+        ws.close();
+        startSSEFallback();
+      }
+    }, 3000);
+
+    ws.onopen = () => {
+      clearTimeout(fallbackTimer);
+      onStatusChange(true);
+    };
+
+    ws.onerror = () => {
+      clearTimeout(fallbackTimer);
+      if (!usedFallback) startSSEFallback();
+    };
+
+    ws.onclose = () => {
+      if (!usedFallback) onStatusChange(false);
+    };
+
+    ws.onmessage = (event: MessageEvent<string>) => {
+      try {
+        onMessage(JSON.parse(event.data) as ServerMessage);
+      } catch {
+        // ignore malformed frames
+      }
+    };
+  } catch {
+    // WebSocket constructor not available (SSR guard — should not happen at runtime)
+    startSSEFallback();
+  }
+
+  return () => {
+    ws?.close();
+    es?.close();
+    onStatusChange(false);
+  };
+}
+
 export default function TradeFeed({ assetId }: Props) {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [connected, setConnected] = useState(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    const url = `/api/stream${assetId ? `?assetId=${assetId}` : ""}`;
-    const es = new EventSource(url);
-    eventSourceRef.current = es;
-
-    es.onopen = () => setConnected(true);
-    es.onerror = () => setConnected(false);
-
-    es.onmessage = (event) => {
-      const data = JSON.parse(event.data) as
-        | { type: "snapshot"; trades: Trade[] }
-        | { type: "trade"; trade: Trade };
-
-      if (data.type === "snapshot") {
-        setTrades(data.trades);
-      } else if (data.type === "trade") {
-        setTrades((prev) => [data.trade, ...prev].slice(0, 100));
-      }
-    };
+    cleanupRef.current = openConnection(
+      assetId,
+      (msg) => {
+        if (msg.type === "snapshot") {
+          setTrades(msg.trades);
+        } else if (msg.type === "trade") {
+          setTrades((prev) => [msg.trade, ...prev].slice(0, 100));
+        }
+      },
+      setConnected,
+    );
 
     return () => {
-      es.close();
-      setConnected(false);
+      cleanupRef.current?.();
     };
   }, [assetId]);
 

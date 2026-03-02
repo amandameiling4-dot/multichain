@@ -19,6 +19,7 @@ const navLinks = [
   { href: "/withdraw", label: "Withdraw", icon: "📤" },
   { href: "/history", label: "History", icon: "📋" },
   { href: "/kyc", label: "KYC", icon: "🪪" },
+  { href: "/news", label: "News", icon: "📰" },
   { href: "/notifications", label: "Notifications", icon: "🔔" },
   { href: "/settings", label: "Settings", icon: "⚙️" },
   { href: "/support", label: "Support", icon: "💬" },

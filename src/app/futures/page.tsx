@@ -4,6 +4,7 @@ import { useState } from "react";
 import WalletGate from "@/components/WalletGate";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
+import PriceChart from "@/components/PriceChart";
 
 const ASSETS = ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT"];
 const LEVERAGES = [1, 2, 5, 10, 20, 50, 100];
@@ -100,12 +101,10 @@ export default function FuturesPage() {
               </div>
             </div>
 
-            {/* Chart placeholder */}
-            <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6 flex items-center justify-center min-h-64">
-              <div className="text-center text-gray-500">
-                <div className="text-4xl mb-3">📊</div>
-                <p>Live chart coming soon</p>
-              </div>
+            {/* Live chart */}
+            <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl p-6">
+              <h2 className="text-sm font-semibold text-gray-300 mb-4">Live Price Chart</h2>
+              <PriceChart />
             </div>
           </div>
         </main>

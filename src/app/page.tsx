@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import PromoCarousel from "@/components/PromoCarousel";
 import MarketOverview from "@/components/MarketOverview";
+import NewsFeed from "@/components/NewsFeed";
 
 const BOTTOM_NAV = [
   { href: "/trade", label: "Trade", icon: "📈" },
@@ -53,6 +54,15 @@ export default function Home() {
             <TradeFeed />
           </section>
 
+          {/* News & Announcements */}
+          <section className="bg-gray-900 border border-gray-800 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-100">📰 News & Announcements</h2>
+              <Link href="/news" className="text-xs text-blue-400 hover:text-blue-300">View all →</Link>
+            </div>
+            <NewsFeed limit={3} />
+          </section>
+
           {/* Nav links */}
           <section className="bg-gray-900 border border-gray-800 rounded-xl p-4">
             <div className="flex flex-wrap gap-2">
@@ -67,6 +77,7 @@ export default function Home() {
                 { href: "/withdraw", label: "Withdraw" },
                 { href: "/history", label: "History" },
                 { href: "/kyc", label: "KYC" },
+                { href: "/news", label: "News" },
                 { href: "/notifications", label: "Notifications" },
                 { href: "/settings", label: "Settings" },
                 { href: "/support", label: "Support" },
