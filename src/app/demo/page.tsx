@@ -33,10 +33,11 @@ export default function DemoPage() {
   const [placing, setPlacing] = useState(false);
 
   useEffect(() => {
-    const w = localStorage.getItem("connectedWallet");
-    if (!w) return;
-    fetch(`/api/users?walletAddress=${w}`)
-      .then((r) => r.json())
+    fetch("/api/me", { credentials: "include" })
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to fetch user");
+        return r.json();
+      })
       .then((u: { id?: string }) => {
         if (u.id) {
           setUserId(u.id);

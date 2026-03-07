@@ -21,12 +21,10 @@ export default function SupportPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const w = localStorage.getItem("connectedWallet");
-    if (!w) return;
-    fetch(`/api/users?walletAddress=${w}`)
-      .then((r) => r.json())
-      .then((u: { id?: string }) => {
-        if (u.id) {
+    fetch("/api/me", { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((u: { id?: string } | null) => {
+        if (u?.id) {
           setUserId(u.id);
           return fetch(`/api/chat?userId=${u.id}`);
         }

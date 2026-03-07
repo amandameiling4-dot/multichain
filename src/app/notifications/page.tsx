@@ -31,10 +31,11 @@ export default function NotificationsPage() {
   const [marking, setMarking] = useState(false);
 
   useEffect(() => {
-    const w = localStorage.getItem("connectedWallet");
-    if (!w) return;
-    fetch(`/api/users?walletAddress=${w}`)
-      .then((r) => r.json())
+    fetch("/api/me", { credentials: "include" })
+      .then((r) => {
+        if (!r.ok) throw new Error(`API error: ${r.status}`);
+        return r.json();
+      })
       .then((u: { id?: string }) => {
         if (u.id) {
           setUserId(u.id);
@@ -42,7 +43,11 @@ export default function NotificationsPage() {
         }
         return null;
       })
-      .then((r) => r ? r.json() : [])
+      .then((r) => {
+        if (!r) return [];
+        if (!r.ok) throw new Error(`API error: ${r.status}`);
+        return r.json();
+      })
       .then((data: Notification[]) => { if (Array.isArray(data)) setNotifications(data); })
       .catch(() => {});
   }, []);

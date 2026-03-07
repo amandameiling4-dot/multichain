@@ -3,9 +3,8 @@
 /**
  * GlobalChat — renders the ChatWidget bubble on every user-facing page.
  *
- * It reads the connected wallet from localStorage, resolves the AppUser id
- * from the API, and then mounts the ChatWidget. On server render (SSR) this
- * component is a no-op because it relies on localStorage and the userId fetch.
+ * It fetches the current user from the session cookie and mounts the
+ * ChatWidget when a valid session is found.
  */
 
 import { useEffect, useState } from "react";
@@ -15,14 +14,11 @@ export default function GlobalChat() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const wallet = typeof window !== "undefined"
-      ? localStorage.getItem("connectedWallet")
-      : null;
-
-    if (!wallet) return;
-
-    fetch(`/api/users?walletAddress=${wallet}`)
-      .then((r) => r.json())
+    fetch("/api/me", { credentials: "include" })
+      .then((r) => {
+        if (!r.ok) throw new Error("API error");
+        return r.json();
+      })
       .then((u: { id?: string }) => {
         if (u.id) setUserId(u.id);
       })
