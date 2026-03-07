@@ -33,12 +33,12 @@ export default function WalletPage() {
 
   useEffect(() => {
     fetch("/api/me", { credentials: "include" })
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error("Failed to fetch user"); return r.json(); })
       .then((u: { id?: string }) => {
         if (u.id) {
           setUserId(u.id);
           fetch(`/api/uploads?userId=${u.id}`)
-            .then((r) => r.json())
+            .then((r) => { if (!r.ok) throw new Error("Failed to fetch uploads"); return r.json(); })
             .then((data: DepositProof[]) => { if (Array.isArray(data)) setDeposits(data); })
             .catch(() => {});
         }
@@ -47,7 +47,7 @@ export default function WalletPage() {
 
     // Fetch public deposit wallets
     fetch("/api/deposit-wallets")
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error("Failed to fetch wallets"); return r.json(); })
       .then((data: DepositWallet[]) => { if (Array.isArray(data)) setWallets(data); })
       .catch(() => {});
   }, []);
