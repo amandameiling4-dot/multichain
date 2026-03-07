@@ -20,7 +20,10 @@ export default function TradePage() {
 
   useEffect(() => {
     fetch("/api/me", { credentials: "include" })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`API error: ${r.status}`);
+        return r.json();
+      })
       .then((u: { id?: string; walletAddress?: string }) => {
         if (u.id) setUserId(u.id);
         if (u.walletAddress) setWallet(u.walletAddress);
