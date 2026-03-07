@@ -34,7 +34,10 @@ export default function DemoPage() {
 
   useEffect(() => {
     fetch("/api/me", { credentials: "include" })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to fetch user");
+        return r.json();
+      })
       .then((u: { id?: string }) => {
         if (u.id) {
           setUserId(u.id);
