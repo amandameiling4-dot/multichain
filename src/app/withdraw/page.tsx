@@ -50,7 +50,10 @@ export default function WithdrawPage() {
 
   useEffect(() => {
     fetch("/api/me", { credentials: "include" })
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((u: { id?: string }) => {
         if (u.id) {
           setUserId(u.id);
