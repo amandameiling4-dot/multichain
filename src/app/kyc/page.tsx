@@ -23,9 +23,9 @@ export default function KYCPage() {
 
   useEffect(() => {
     fetch("/api/me", { credentials: "include" })
-      .then((r) => r.json())
-      .then((u: { id?: string }) => {
-        if (u.id) {
+      .then((r) => r.ok ? r.json() : null)
+      .then((u: { id?: string } | null) => {
+        if (u?.id) {
           setUserId(u.id);
           return fetch(`/api/kyc?userId=${u.id}`);
         }
