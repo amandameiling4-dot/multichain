@@ -14,21 +14,18 @@ interface Asset {
 
 export default function TradePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [wallet] = useState<string | undefined>(() => {
-    if (typeof window !== "undefined") return localStorage.getItem("connectedWallet") ?? undefined;
-    return undefined;
-  });
+  const [wallet, setWallet] = useState<string | undefined>(undefined);
   const [userId, setUserId] = useState("");
   const [assets, setAssets] = useState<Asset[]>([]);
 
   useEffect(() => {
-    const w = localStorage.getItem("connectedWallet");
-    if (w) {
-      fetch(`/api/users?walletAddress=${w}`)
-        .then((r) => r.json())
-        .then((u: { id?: string }) => { if (u.id) setUserId(u.id); })
-        .catch(() => {});
-    }
+    fetch("/api/me", { credentials: "include" })
+      .then((r) => r.json())
+      .then((u: { id?: string; walletAddress?: string }) => {
+        if (u.id) setUserId(u.id);
+        if (u.walletAddress) setWallet(u.walletAddress);
+      })
+      .catch(() => {});
     fetch("/api/assets")
       .then((r) => r.json())
       .then((data: Asset[]) => setAssets(data))

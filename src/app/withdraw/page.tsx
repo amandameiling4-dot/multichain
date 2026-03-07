@@ -49,9 +49,7 @@ export default function WithdrawPage() {
   }
 
   useEffect(() => {
-    const w = localStorage.getItem("connectedWallet");
-    if (!w) return;
-    fetch(`/api/users?walletAddress=${w}`)
+    fetch("/api/me", { credentials: "include" })
       .then((r) => r.json())
       .then((u: { id?: string }) => {
         if (u.id) {

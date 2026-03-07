@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
 
 interface WalletGateProps {
   children: ReactNode;
@@ -15,22 +15,78 @@ function generateWalletAddress(): string {
   return addr;
 }
 
+async function establishSession(walletAddress: string): Promise<boolean> {
+  try {
+    const nonceRes = await fetch(`/api/auth/nonce?walletAddress=${encodeURIComponent(walletAddress)}`);
+    if (!nonceRes.ok) return false;
+    const res = await fetch("/api/auth/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ walletAddress }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export default function WalletGate({ children }: WalletGateProps) {
   const [wallet, setWallet] = useState<string | null>(() => {
     if (typeof window !== "undefined") return localStorage.getItem("connectedWallet");
     return null;
   });
+  const [connecting, setConnecting] = useState(false);
 
-  function connectWallet() {
-    const addr = generateWalletAddress();
-    localStorage.setItem("connectedWallet", addr);
-    setWallet(addr);
-    // Register user in backend
-    fetch("/api/users", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ walletAddress: addr }),
-    }).catch(() => {});
+  // On mount: verify existing session; re-establish or clear if invalid.
+  useEffect(() => {
+    const stored = localStorage.getItem("connectedWallet");
+    if (!stored) return;
+
+    fetch("/api/me", { credentials: "include" })
+      .then((r) => {
+        if (r.ok) {
+          return r.json().then((data: { walletAddress?: string }) => {
+            // Sync the wallet address from the session; fall back to the stored value.
+            const addr = data.walletAddress ?? stored;
+            localStorage.setItem("connectedWallet", addr);
+            setWallet(addr);
+          });
+        }
+        // Session is invalid or expired – try to re-establish it.
+        return establishSession(stored).then((ok) => {
+          if (!ok) {
+            localStorage.removeItem("connectedWallet");
+            setWallet(null);
+          }
+        });
+      })
+      .catch(() => {
+        // Network error – keep the locally stored wallet without changes.
+      });
+  }, []);
+
+  async function connectWallet() {
+    setConnecting(true);
+    try {
+      const addr = generateWalletAddress();
+      const ok = await establishSession(addr);
+      if (ok) {
+        localStorage.setItem("connectedWallet", addr);
+        setWallet(addr);
+      } else {
+        // Fallback: register via the legacy users endpoint and keep going.
+        await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ walletAddress: addr }),
+        }).catch(() => {});
+        localStorage.setItem("connectedWallet", addr);
+        setWallet(addr);
+      }
+    } finally {
+      setConnecting(false);
+    }
   }
 
   if (!wallet) {
@@ -44,9 +100,10 @@ export default function WalletGate({ children }: WalletGateProps) {
           </p>
           <button
             onClick={connectWallet}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-lg transition-colors"
+            disabled={connecting}
+            className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white font-semibold py-3 rounded-lg transition-colors"
           >
-            Connect Wallet
+            {connecting ? "Connecting…" : "Connect Wallet"}
           </button>
           <p className="text-xs text-gray-600 mt-4">
             Mock wallet for demo purposes

@@ -37,12 +37,10 @@ export default function SettingsPage() {
   const [msgType, setMsgType] = useState<"ok" | "err">("ok");
 
   useEffect(() => {
-    const w = localStorage.getItem("connectedWallet");
-    if (!w) return;
-    fetch(`/api/me?walletAddress=${w}`)
-      .then((r) => r.json())
-      .then((u: UserProfile) => {
-        if (u.id) {
+    fetch("/api/me", { credentials: "include" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((u: UserProfile | null) => {
+        if (u?.id) {
           setProfile(u);
           setForm({ displayName: u.displayName ?? "", email: u.email ?? "" });
         }
@@ -57,7 +55,8 @@ export default function SettingsPage() {
     const res = await fetch("/api/me", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ walletAddress: profile.walletAddress, ...form }),
+      credentials: "include",
+      body: JSON.stringify(form),
     });
     if (res.ok) {
       const updated = await res.json() as Partial<UserProfile>;

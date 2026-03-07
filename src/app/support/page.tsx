@@ -21,9 +21,7 @@ export default function SupportPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const w = localStorage.getItem("connectedWallet");
-    if (!w) return;
-    fetch(`/api/users?walletAddress=${w}`)
+    fetch("/api/me", { credentials: "include" })
       .then((r) => r.json())
       .then((u: { id?: string }) => {
         if (u.id) {
