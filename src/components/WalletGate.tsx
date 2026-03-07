@@ -55,10 +55,26 @@ export default function WalletGate({ children }: WalletGateProps) {
         }
         // Session is invalid or expired – try to re-establish it.
         return establishSession(stored).then((ok) => {
-          if (!ok) {
-            localStorage.removeItem("connectedWallet");
-            setWallet(null);
+          if (ok) {
+            // Re-establishment succeeded; wallet is already set above.
+            return;
           }
+          // Re-establishment failed. Try fallback: register via legacy users endpoint.
+          return fetch("/api/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ walletAddress: stored }),
+          })
+            .then(() => {
+              // Fallback succeeded; keep the stored wallet.
+              localStorage.setItem("connectedWallet", stored);
+              setWallet(stored);
+            })
+            .catch(() => {
+              // Fallback also failed; clear the wallet.
+              localStorage.removeItem("connectedWallet");
+              setWallet(null);
+            });
         });
       })
       .catch(() => {
